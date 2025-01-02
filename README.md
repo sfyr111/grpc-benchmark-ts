@@ -45,7 +45,7 @@ CONCURRENCY=10
 你还可以通过命令行参数覆盖默认配置。例如：
 
 ```bash
-npx tsx src/grpc-bench/latency_serial.ts --grpc_url=https://your-grpc-server.com:443 --total_rounds=200 --concurrency=20
+npx tsx src/grpc-bench/latency-serial.ts --grpc_url=https://your-grpc-server.com:443 --total_rounds=200 --concurrency=20
 ```
 
 ### 测试说明
@@ -54,14 +54,14 @@ npx tsx src/grpc-bench/latency_serial.ts --grpc_url=https://your-grpc-server.com
 串行方式测试ping之后pong的返回时间，每个ping间隔100ms；
 
 ```bash
-npx tsx src/grpc-bench/latency_serial.ts --total_rounds=10
+npx tsx src/grpc-bench/latency-serial.ts --total_rounds=10
 ```
 
 并发测试：
 简单的并发方式，保持n个ping请求；
 
 ```bash
-npx tsx src/grpc-bench/latency_parallel.ts
+npx tsx src/grpc-bench/latency-parallel.ts
 ```
 
 ### 输出示例
