@@ -11,6 +11,7 @@ const limit = pLimit(concurrency); // 创建并发限制器
 // 初始化日志
 logger.info(`Jito URL: ${jitoUrl}`);
 logger.info(`请求并发量: ${concurrency}/s`);
+logger.info(`每 10 秒输出统计信息, 请稍后...`);
 
 // 统计变量
 let totalRequestCount = 0; // 总请求计数
