@@ -2,9 +2,11 @@
 
 ## 适用场景
 
-本工具专为测试Jito节点的IP限制机制设计。通过配置多个IP地址作为代理(自行搭建)，并发请求自定义Jito节点，实时监测多IP的请求成功率，验证多IP代理在请求限制方面的效果。
+本工具专为测试Jito节点的IP限制机制设计。通过配置多个IP地址作为代理（自行搭建），并发请求自定义Jito节点，实时监测多IP的请求成功率，验证多IP代理在请求限制方面的效果。
 
-测试原理：通过统计HTTP状态码200（成功响应）和429（请求过于频繁）的数量，评估Jito节点对IP请求的限制情况。
+测试原理：
+
+- jito sendBundle /api/v1/bundles 有一个方法 getTipAccounts，与 sendBundle 有相同的 IP 限制机制，通过请求 getTipAccounts 方法，统计 HTTP 状态码 200（成功响应）和 429（请求过于频繁）的数量，评估 Jito 节点对 IP 请求的限制情况。（实际上也可以直接请求 sendBundle，但参数更麻烦）
 
 ## 环境配置
 
@@ -12,7 +14,7 @@
 2. 根据实际需求修改配置项：
    - `JITO_URL`: 自定义 Jito 服务地址，选填，默认 `https://amsterdam.mainnet.block-engine.jito.wtf`
    - `JITO_CONCURRENCY`: 每秒请求并发量，选填，默认 `10`
-3. 注意：JITO_URL 需要是自己代理的多 IP Jito节点，官方 URL 只是方便来测试，不是本工具主要用途
+3. 注意：JITO_URL 需要是自己代理的多 IP Jito节点，官方 URL 只是方便来测试，不是本工具主要用途。
 
 ## 运行步骤
 
