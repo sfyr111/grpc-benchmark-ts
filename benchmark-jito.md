@@ -10,8 +10,9 @@
 
 1. [可选] 复制 `.env.jito.example` 文件并重命名为 `.env`
 2. 根据实际需求修改配置项：
-   - `JITO_URL`: Jito 服务地址，选填，默认 `https://amsterdam.mainnet.block-engine.jito.wtf`
+   - `JITO_URL`: 自定义 Jito 服务地址，选填，默认 `https://amsterdam.mainnet.block-engine.jito.wtf`
    - `JITO_CONCURRENCY`: 每秒请求并发量，选填，默认 `10`
+3. 注意：JITO_URL 需要是自己代理的多 IP Jito节点，官方 URL 只是方便来测试，不是本工具主要用途
 
 ## 运行步骤
 
