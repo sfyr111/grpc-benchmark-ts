@@ -7,6 +7,7 @@
 测试原理：
 
 - jito sendBundle /api/v1/bundles 有一个方法 getTipAccounts，与 sendBundle 有相同的 IP 限制机制，通过请求 getTipAccounts 方法，统计 HTTP 状态码 200（成功响应）和 429（请求过于频繁）的数量，评估 Jito 节点对 IP 请求的限制情况。（实际上也可以直接请求 sendBundle，但参数更麻烦）
+- 注意：jito 的限制包含 IP 和 发送 tip 的钱包账户。
 
 ## 环境配置
 

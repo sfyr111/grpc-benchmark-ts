@@ -1,7 +1,7 @@
 import axios from "axios";
 import "dotenv/config";
 import pLimit from "p-limit";
-import { logger } from "./logger.js";
+import { logger } from "./logger";
 
 // 从环境变量读取 Jito URL 和并发量，设置默认值
 const jitoUrl = process.env.JITO_URL || "https://amsterdam.mainnet.block-engine.jito.wtf";
@@ -47,6 +47,7 @@ async function run() {
   };
 
   try {
+    totalRequestCount++; // 统计总请求量
     const bundle_resp = await axios.post(`${jitoUrl}/api/v1/bundles`, bundle, {
       headers: {
         "Content-Type": "application/json",
@@ -83,7 +84,6 @@ async function main() {
             logger.error(`请求发生错误: ${error.message}`);
           })
         );
-        totalRequestCount++; // 统计总请求量
       }, i * interval); // 均匀分布请求
     }
   }

@@ -10,7 +10,7 @@ const program = new Command();
 
 program
   .option("--grpc_url <url>", "gRPC 服务 URL")
-  .option("--total_rounds <number>", "总共发送的 ping 请求数量", "100")
+  .option("--total_rounds <number>", "总共发送的 ping 请求数量", "50")
   .option("--concurrency <number>", "并发数量，即同时进行的 ping 请求数量", "10");
 
 program.parse(process.argv);
@@ -27,7 +27,7 @@ export const config = {
     ? parseInt(options.total_rounds, 10)
     : process.env.TOTAL_ROUNDS
       ? parseInt(process.env.TOTAL_ROUNDS, 10)
-      : 100,
+      : 50,
   CONCURRENCY: options.concurrency
     ? parseInt(options.concurrency, 10)
     : process.env.CONCURRENCY
@@ -42,9 +42,9 @@ if (!options.grpc_url && !process.env.GRPC_URL) {
 
 if (isNaN(config.TOTAL_ROUNDS) || config.TOTAL_ROUNDS <= 0) {
   logger.warn(
-    `无效的 TOTAL_ROUNDS 值 (${options.total_rounds || process.env.TOTAL_ROUNDS})，使用默认值 100`
+    `无效的 TOTAL_ROUNDS 值 (${options.total_rounds || process.env.TOTAL_ROUNDS})，使用默认值 50`
   );
-  config.TOTAL_ROUNDS = 100;
+  config.TOTAL_ROUNDS = 50;
 }
 
 if (isNaN(config.CONCURRENCY) || config.CONCURRENCY <= 0) {
