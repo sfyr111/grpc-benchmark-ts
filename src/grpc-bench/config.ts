@@ -10,6 +10,7 @@ const program = new Command();
 
 program
   .option("--grpc_url <url>", "gRPC 服务 URL")
+  .option("--grpc_token <token>", "gRPC 服务认证令牌 (X-Token)")
   .option("--total_rounds <number>", "总共发送的 ping 请求数量", "50")
   .option("--concurrency <number>", "并发数量，即同时进行的 ping 请求数量", "10");
 
@@ -23,6 +24,7 @@ export const config = {
     options.grpc_url ||
     process.env.GRPC_URL ||
     "https://solana-yellowstone-grpc.publicnode.com:443",
+  GRPC_TOKEN: options.grpc_token || process.env.GRPC_TOKEN || undefined,
   TOTAL_ROUNDS: options.total_rounds
     ? parseInt(options.total_rounds, 10)
     : process.env.TOTAL_ROUNDS

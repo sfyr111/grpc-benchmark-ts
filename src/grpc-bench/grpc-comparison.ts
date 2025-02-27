@@ -9,6 +9,7 @@ dotenv.config();
 interface GrpcEndpoint {
   name: string;
   url: string;
+  token?: string;
 }
 
 interface BlockData {
@@ -63,7 +64,7 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
     try {
       logger.info(`连接到 ${endpoint.name}: ${endpoint.url}`);
 
-      clients[endpoint.name] = new Client(endpoint.url, undefined, {
+      clients[endpoint.name] = new Client(endpoint.url, endpoint.token, {
         "grpc.max_receive_message_length": 16 * 1024 * 1024, // 16MB
       });
 
@@ -386,6 +387,7 @@ async function main() {
     endpoints.push({
       name: process.env[`GRPC_NAME_${index}`] || `GRPC-${index}`,
       url: process.env[key] || "",
+      token: process.env[`GRPC_TOKEN_${index}`],
     });
   });
 

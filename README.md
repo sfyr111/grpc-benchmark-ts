@@ -1,3 +1,5 @@
+# GRPC 延迟测试
+
 ## 安装
 
 ### 前提条件
@@ -6,15 +8,9 @@
 
 ### 安装依赖
 
-使用 `pnpm`：
-
 ```bash
 pnpm install
-```
-
-使用 `npm`：
-
-```bash
+# or
 npm install
 ```
 
@@ -29,6 +25,7 @@ npm install
 | 变量名         | 描述                                 | 默认值                                               |
 | -------------- | ------------------------------------ | ---------------------------------------------------- |
 | `GRPC_URL`     | 要测试的 gRPC 服务 URL               | `https://solana-yellowstone-grpc.publicnode.com:443` |
+| `GRPC_TOKEN`   | gRPC 服务认证令牌 (X-Token)          | 无                                                   |
 | `TOTAL_ROUNDS` | 要发送的总 ping 请求数量             | `50`                                                 |
 | `CONCURRENCY`  | 并发数量，即同时进行的 ping 请求数量 | `10`                                                 |
 
@@ -48,9 +45,9 @@ CONCURRENCY=10
 npx tsx src/grpc-bench/latency-serial.ts --grpc_url=https://solana-yellowstone-grpc.publicnode.com:443 --total_rounds=10
 ```
 
-### 测试说明
+## 测试说明
 
-#### 串行测试
+### 串行测试
 
 串行方式测试 ping 之后 pong 的返回时间，每个 ping 间隔 100ms；
 
@@ -58,7 +55,7 @@ npx tsx src/grpc-bench/latency-serial.ts --grpc_url=https://solana-yellowstone-g
 npx tsx src/grpc-bench/latency-serial.ts --total_rounds=10
 ```
 
-#### 并发测试
+### 并发测试
 
 简单的并发方式，保持 n 个 ping 请求；
 注意: 有些服务商会限制每秒订阅数量导致报错（例如 shyft 100/s），可适当调小并发数量。
@@ -67,7 +64,7 @@ npx tsx src/grpc-bench/latency-serial.ts --total_rounds=10
 npx tsx src/grpc-bench/latency-parallel.ts --grpc_url=https://solana-yellowstone-grpc.publicnode.com:443 --total_rounds=50 --concurrency=10
 ```
 
-#### GRPC 服务对比测试
+### GRPC 服务对比测试
 
 新增的 `grpc-comparison` 工具用于对比多个 GRPC 服务的性能，通过分析它们接收相同 slot 的时间差来评估相对延迟。适用于需要横向评估多个 GRPC 服务性能的场景。
 
@@ -77,7 +74,7 @@ npx tsx src/grpc-bench/grpc-comparison.ts
 
 更多详情请参考 [grpc-comparison.md](./grpc-comparison.md)。
 
-### 输出示例
+## 输出示例
 
 ```plaintext
 [11:09:18.626] INFO: GRPC_URL: https://grpc.chainbuff.com
@@ -100,6 +97,6 @@ npx tsx src/grpc-bench/grpc-comparison.ts
   样本数量: 100
 ```
 
-### 联系方式
+## 联系方式
 
 Telegram: @bloxflux

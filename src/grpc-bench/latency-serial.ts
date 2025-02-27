@@ -7,14 +7,14 @@ import { PingInfo, sendPing } from "./ping";
 import { processResults } from "./stats";
 
 // 主测试函数
-async function testGRPCLatency(url: string, rounds: number = 10) {
+async function testGRPCLatency(url: string, rounds: number = 10, token?: string) {
   const latencies: number[] = [];
   let receivedPongs = 0;
   let isWarmupDone = false; // 添加预热标志
   const pendingPings: Map<number, PingInfo> = new Map(); // 跟踪待完成的 ping
 
   try {
-    const client = new Client(url, undefined, {
+    const client = new Client(url, token, {
       // "grpc.max_receive_message_length": 64 * 1024 * 1024,
     });
 
@@ -74,10 +74,13 @@ async function testGRPCLatency(url: string, rounds: number = 10) {
 
 async function main() {
   logger.info(`GRPC_URL: ${config.GRPC_URL}`);
+  if (config.GRPC_TOKEN) {
+    logger.info(`GRPC_TOKEN: 已配置`);
+  }
   logger.info(`TOTAL_ROUNDS: ${config.TOTAL_ROUNDS}`);
   // logger.info(`CONCURRENCY: ${config.CONCURRENCY}`);
 
-  await testGRPCLatency(config.GRPC_URL, config.TOTAL_ROUNDS);
+  await testGRPCLatency(config.GRPC_URL, config.TOTAL_ROUNDS, config.GRPC_TOKEN);
 }
 
 main().catch((error) => {
