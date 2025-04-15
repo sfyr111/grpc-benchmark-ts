@@ -25,6 +25,7 @@ interface EndpointStats {
   totalReceived: number;
   isAvailable: boolean; // 标记端点是否可用
   hasReceivedData: boolean; // 标记端点是否真正收到过数据
+  firstSlot?: number; // 记录端点收到的第一个slot
 }
 
 async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: number = 30) {
@@ -47,6 +48,9 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
   // 添加一个集合来存储活跃的端点
   const activeEndpoints: Set<string> = new Set();
 
+  // 添加一个映射来存储每个端点接收到的第一个slot
+  const firstReceivedSlots: { [key: string]: number } = {};
+
   endpoints.forEach((endpoint) => {
     firstSlotReceived[endpoint.name] = false;
     // 初始假设所有端点都是活跃的
@@ -68,6 +72,53 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
     };
   });
 
+  // 在所有节点都收到第一个slot后进行统一判断
+  function checkAllSlotsAlignment() {
+    // 允许的最大slot差异，超过这个差异认为端点严重滞后
+    const MAX_SLOT_DIFFERENCE = 10;
+
+    // 只考虑已经收到数据的节点
+    const nodesWithData = Object.keys(firstReceivedSlots);
+    if (nodesWithData.length < 2) {
+      return false; // 至少需要两个节点才能比较
+    }
+
+    // 找出最大的slot值作为基准（代表最新区块）
+    const slotValues = Object.values(firstReceivedSlots);
+    const maxSlot = Math.max(...slotValues);
+    logger.info(`使用最大slot ${maxSlot} 作为基准进行对比 (最新区块)`);
+
+    // 检查每个节点与最大slot的差异
+    const invalidEndpoints: string[] = [];
+
+    for (const [endpoint, slot] of Object.entries(firstReceivedSlots)) {
+      // 计算当前slot与最新slot的差距
+      const difference = maxSlot - slot;
+
+      if (difference > MAX_SLOT_DIFFERENCE) {
+        logger.warn(
+          `${endpoint} 的第一个slot (${slot}) 比基准值旧 (基准值: ${maxSlot}, 落后: ${difference}个区块)`
+        );
+        logger.warn(`${endpoint} 被标记为异常端点，将不参与性能比较`);
+        endpointStats[endpoint].isAvailable = false;
+        activeEndpoints.delete(endpoint);
+        invalidEndpoints.push(endpoint);
+      }
+    }
+
+    if (invalidEndpoints.length > 0) {
+      logger.warn(`以下端点因slot落后过多被排除: ${invalidEndpoints.join(", ")}`);
+
+      // 如果剩余可用端点少于2个，返回false表示无法继续测试
+      if (activeEndpoints.size < 2) {
+        logger.warn(`剩余可用端点不足两个 (当前${activeEndpoints.size}个), 无法进行对比分析`);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   // 设置超时检查，在测试时间的1/3和5秒中的最小值处检查不可用的端点
   const availabilityCheckTimeout = setTimeout(
     () => {
@@ -86,13 +137,22 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
         logger.warn(`以下端点已被标记为不可用: ${unavailableEndpoints.join(", ")}`);
       }
 
-      // 如果还没有开始正式统计，但有至少两个活跃端点，则开始统计
-      if (!startedFormalStats && activeEndpoints.size >= 2) {
-        startedFormalStats = true;
-        logger.info(`有${activeEndpoints.size}个活跃端点, 开始正式统计...`);
+      // 如果还没有开始正式统计，但有节点已经收到数据，尝试启动统计
+      if (!startedFormalStats && Object.keys(firstReceivedSlots).length >= 2) {
+        // 进行统一的slot差异检查
+        if (checkAllSlotsAlignment()) {
+          startedFormalStats = true;
+          logger.info(`有${activeEndpoints.size}个有效端点, 开始正式统计...`);
 
-        // 将之前收集的数据纳入统计
-        processCollectedData();
+          // 将之前收集的数据纳入统计
+          processCollectedData();
+        } else {
+          // 如果slot差异过大导致可用端点不足，提前结束测试
+          if (activeEndpoints.size < 2) {
+            logger.info("由于可用端点不足, 提前结束测试");
+            endTest();
+          }
+        }
       } else if (!startedFormalStats && activeEndpoints.size < 2) {
         logger.warn(`活跃端点不足两个 (当前${activeEndpoints.size}个), 无法进行对比分析`);
 
@@ -212,22 +272,36 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
           if (!firstSlotReceived[endpoint.name]) {
             firstSlotReceived[endpoint.name] = true;
             endpointStats[endpoint.name].hasReceivedData = true; // 标记为真正收到数据
+            endpointStats[endpoint.name].firstSlot = currentSlot; // 记录第一个slot
+            firstReceivedSlots[endpoint.name] = currentSlot; // 存储第一个slot
+
+            // 不再立即检查，只记录和输出信息
             logger.info(`${endpoint.name} 成功接收到第一个 slot ${currentSlot}, 确认为可用端点`);
 
-            // 如果尚未开始正式统计，检查活跃端点数量
+            // 如果尚未开始正式统计，检查是否所有活跃端点都收到了第一个slot
             if (!startedFormalStats) {
-              // 计算真正收到数据的端点数量
-              const receivedDataCount = Object.values(endpointStats).filter(
-                (s) => s.hasReceivedData
-              ).length;
+              // 计算已收到数据的端点数量
+              const receivedDataCount = Object.keys(firstReceivedSlots).length;
+              const totalActiveEndpoints = activeEndpoints.size;
 
-              // 如果所有端点都收到了数据，开始正式统计
-              if (receivedDataCount === endpoints.length) {
-                startedFormalStats = true;
-                logger.info("所有端点都已接收到数据, 开始正式统计...");
+              // 如果所有活跃端点都收到了第一个slot，开始slot差异检查
+              if (receivedDataCount === totalActiveEndpoints && receivedDataCount >= 2) {
+                logger.info("所有活跃端点都已收到第一个slot，开始检查slot差异...");
 
-                // 处理之前收集的数据
-                processCollectedData();
+                // 进行统一的slot差异检查
+                if (checkAllSlotsAlignment()) {
+                  startedFormalStats = true;
+                  logger.info(`有${activeEndpoints.size}个有效端点, 开始正式统计...`);
+
+                  // 处理之前收集的数据
+                  processCollectedData();
+                } else {
+                  // 如果slot差异过大导致可用端点不足，提前结束测试
+                  if (activeEndpoints.size < 2) {
+                    logger.info("由于可用端点不足, 提前结束测试");
+                    endTest();
+                  }
+                }
               }
             }
           }
@@ -262,11 +336,14 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
 
           // 只统计当前活跃的端点中都接收到该slot的情况
           const receivedEndpoints = new Set(blockDataList.map((bd) => bd.endpoint));
+
+          // 简化回到使用activeEndpoints
           const allActiveEndpointsReceived = Array.from(activeEndpoints).every((ep) =>
             receivedEndpoints.has(ep)
           );
 
-          if (blockDataList.length === activeEndpointCount && allActiveEndpointsReceived) {
+          // 当所有活跃端点都收到了该slot时进行统计
+          if (activeEndpoints.size >= 2 && allActiveEndpointsReceived) {
             // 确保每个活跃端点只被计数一次
             activeEndpoints.forEach((endpoint) => {
               // 检查此端点是否收到了该 slot
@@ -275,17 +352,22 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
               }
             });
 
+            // 只考虑活跃端点数据
+            const activeEndpointData = blockDataList.filter((bd) =>
+              activeEndpoints.has(bd.endpoint)
+            );
+
             // 找出最早收到此区块的时间
-            const earliestTimestamp = Math.min(...blockDataList.map((bd) => bd.timestamp));
+            const earliestTimestamp = Math.min(...activeEndpointData.map((bd) => bd.timestamp));
 
             // 计算每个端点的延迟
-            blockDataList.forEach((bd) => {
+            activeEndpointData.forEach((bd) => {
               const latency = bd.timestamp - earliestTimestamp;
               if (latency > 0) {
                 endpointStats[bd.endpoint].latencies.push(latency);
                 endpointStats[bd.endpoint].totalLatency += latency;
                 logger.info(
-                  `${bd.endpoint} 接收 slot ${currentSlot}: 延迟 ${latency.toFixed(2)}ms (相对于 ${blockDataList.find((b) => b.timestamp === earliestTimestamp)!.endpoint})`
+                  `${bd.endpoint} 接收 slot ${currentSlot}: 延迟 ${latency.toFixed(2)}ms (相对于 ${activeEndpointData.find((b) => b.timestamp === earliestTimestamp)!.endpoint})`
                 );
               } else {
                 endpointStats[bd.endpoint].firstReceived++;
