@@ -111,6 +111,11 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
   function processCollectedData() {
     // 处理所有待处理的数据
     for (const [slot, blockDataList] of pendingBlockData.entries()) {
+      // 如果这个 slot 已经在 blockDataBySlot 中处理过，跳过
+      if (blockDataBySlot.has(slot)) {
+        continue;
+      }
+
       // 只处理有活跃端点数据的区块，且只考虑真正收到数据的端点
       const activeEndpointData = blockDataList.filter(
         (data) => activeEndpoints.has(data.endpoint) && endpointStats[data.endpoint].hasReceivedData
@@ -118,9 +123,11 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
 
       if (activeEndpointData.length >= 2) {
         // 至少需要两个活跃端点的数据才有比较意义
-        // 更新总接收数
-        activeEndpointData.forEach((bd) => {
-          endpointStats[bd.endpoint].totalReceived++;
+        // 更新总接收数 - 确保每个活跃端点都计数一次
+        activeEndpoints.forEach((endpoint) => {
+          if (activeEndpointData.some((data) => data.endpoint === endpoint)) {
+            endpointStats[endpoint].totalReceived++;
+          }
         });
 
         // 找出最早收到此区块的时间
@@ -260,9 +267,12 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
           );
 
           if (blockDataList.length === activeEndpointCount && allActiveEndpointsReceived) {
-            // 更新总接收数
-            blockDataList.forEach((bd) => {
-              endpointStats[bd.endpoint].totalReceived++;
+            // 确保每个活跃端点只被计数一次
+            activeEndpoints.forEach((endpoint) => {
+              // 检查此端点是否收到了该 slot
+              if (blockDataList.some((bd) => bd.endpoint === endpoint)) {
+                endpointStats[endpoint].totalReceived++;
+              }
             });
 
             // 找出最早收到此区块的时间
