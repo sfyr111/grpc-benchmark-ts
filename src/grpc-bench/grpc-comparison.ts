@@ -73,7 +73,7 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
   });
 
   // 计算最大端点名称长度
-  const maxNameLength = Math.max(...endpoints.map((e) => e.name.length)) + 1;
+  const maxNameLength = Math.max(...endpoints.map((e) => e.name.length));
 
   // 在所有节点都收到第一个slot后进行统一判断
   function checkAllSlotsAlignment() {
