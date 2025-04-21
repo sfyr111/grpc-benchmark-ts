@@ -72,6 +72,9 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
     };
   });
 
+  // 计算最大端点名称长度
+  const maxNameLength = Math.max(...endpoints.map((e) => e.name.length)) + 1;
+
   // 在所有节点都收到第一个slot后进行统一判断
   function checkAllSlotsAlignment() {
     // 允许的最大slot差异，超过这个差异认为端点严重滞后
@@ -200,11 +203,11 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
             endpointStats[bd.endpoint].latencies.push(latency);
             endpointStats[bd.endpoint].totalLatency += latency;
             logger.info(
-              `${bd.endpoint} 接收 slot ${bd.slot}: 延迟 ${latency.toFixed(2)}ms (相对于 ${activeEndpointData.find((b) => b.timestamp === earliestTimestamp)!.endpoint})`
+              `${bd.endpoint.padEnd(maxNameLength)} 接收 slot ${bd.slot}: 延迟 ${latency.toFixed(2)}ms (相对于 ${activeEndpointData.find((b) => b.timestamp === earliestTimestamp)!.endpoint})`
             );
           } else {
             endpointStats[bd.endpoint].firstReceived++;
-            logger.info(`${bd.endpoint} 接收 slot ${bd.slot}: 首次接收`);
+            logger.info(`${bd.endpoint.padEnd(maxNameLength)} 接收 slot ${bd.slot}: 首次接收`);
           }
         });
       }
@@ -276,7 +279,9 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
             firstReceivedSlots[endpoint.name] = currentSlot; // 存储第一个slot
 
             // 不再立即检查，只记录和输出信息
-            logger.info(`${endpoint.name} 成功接收到第一个 slot ${currentSlot}, 确认为可用端点`);
+            logger.info(
+              `${endpoint.name.padEnd(maxNameLength)} 成功接收到第一个 slot ${currentSlot}, 确认为可用端点`
+            );
 
             // 如果尚未开始正式统计，检查是否所有活跃端点都收到了第一个slot
             if (!startedFormalStats) {
@@ -367,11 +372,13 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
                 endpointStats[bd.endpoint].latencies.push(latency);
                 endpointStats[bd.endpoint].totalLatency += latency;
                 logger.info(
-                  `${bd.endpoint} 接收 slot ${currentSlot}: 延迟 ${latency.toFixed(2)}ms (相对于 ${activeEndpointData.find((b) => b.timestamp === earliestTimestamp)!.endpoint})`
+                  `${bd.endpoint.padEnd(maxNameLength)} 接收 slot ${currentSlot}: 延迟 ${latency.toFixed(2)}ms (相对于 ${activeEndpointData.find((b) => b.timestamp === earliestTimestamp)!.endpoint})`
                 );
               } else {
                 endpointStats[bd.endpoint].firstReceived++;
-                logger.info(`${bd.endpoint} 接收 slot ${currentSlot}: 首次接收`);
+                logger.info(
+                  `${bd.endpoint.padEnd(maxNameLength)} 接收 slot ${currentSlot}: 首次接收`
+                );
               }
             });
 
@@ -549,7 +556,7 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
             : 0;
 
         logger.info(
-          `${endpoint.name.padEnd(8)}: 首先接收 ${firstPercent.toFixed(2).padStart(6)}%, 落后时平均延迟 ${avgLatencyWhenSlower.toFixed(2).padStart(6)}ms, 总体平均延迟 ${avgLatencyTotal.toFixed(2).padStart(6)}ms`
+          `${endpoint.name.padEnd(maxNameLength)}: 首先接收 ${firstPercent.toFixed(2).padStart(6)}%, 落后时平均延迟 ${avgLatencyWhenSlower.toFixed(2).padStart(6)}ms, 总体平均延迟 ${avgLatencyTotal.toFixed(2).padStart(6)}ms`
         );
       }
     } else if (sortedEndpoints.length === 1) {
@@ -617,8 +624,9 @@ async function main() {
   const endpointKeys = Object.keys(process.env).filter((key) => key.startsWith("GRPC_URL_"));
   endpointKeys.forEach((key) => {
     const index = key.replace("GRPC_URL_", "");
+    // 将名称中的横线替换为下划线，确保命名一致性
     endpoints.push({
-      name: process.env[`GRPC_NAME_${index}`] || `GRPC-${index}`,
+      name: process.env[`GRPC_NAME_${index}`] || `GRPC_${index}`,
       url: process.env[key] || "",
       token: process.env[`GRPC_TOKEN_${index}`],
     });
@@ -628,11 +636,11 @@ async function main() {
   if (endpoints.length === 0) {
     logger.info("没有配置任何端点，使用默认值");
     endpoints.push({
-      name: "GRPC-1",
+      name: "GRPC_1",
       url: "https://solana-yellowstone-grpc.publicnode.com:443",
     });
     endpoints.push({
-      name: "GRPC-2",
+      name: "GRPC_2",
       url: "https://solana-yellowstone-grpc.publicnode.com:443",
     });
   }
