@@ -203,7 +203,7 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
             endpointStats[bd.endpoint].latencies.push(latency);
             endpointStats[bd.endpoint].totalLatency += latency;
             logger.info(
-              `${bd.endpoint.padEnd(maxNameLength)} 接收 slot ${bd.slot}: 延迟 ${latency.toFixed(2)}ms (相对于 ${activeEndpointData.find((b) => b.timestamp === earliestTimestamp)!.endpoint})`
+              `${bd.endpoint.padEnd(maxNameLength)} 接收 slot ${bd.slot}: 延迟 ${latency.toFixed(2).padStart(6)}ms (相对于 ${activeEndpointData.find((b) => b.timestamp === earliestTimestamp)!.endpoint})`
             );
           } else {
             endpointStats[bd.endpoint].firstReceived++;
@@ -372,7 +372,7 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
                 endpointStats[bd.endpoint].latencies.push(latency);
                 endpointStats[bd.endpoint].totalLatency += latency;
                 logger.info(
-                  `${bd.endpoint.padEnd(maxNameLength)} 接收 slot ${currentSlot}: 延迟 ${latency.toFixed(2)}ms (相对于 ${activeEndpointData.find((b) => b.timestamp === earliestTimestamp)!.endpoint})`
+                  `${bd.endpoint.padEnd(maxNameLength)} 接收 slot ${currentSlot}: 延迟 ${latency.toFixed(2).padStart(6)}ms (相对于 ${activeEndpointData.find((b) => b.timestamp === earliestTimestamp)!.endpoint})`
                 );
               } else {
                 endpointStats[bd.endpoint].firstReceived++;
@@ -511,9 +511,9 @@ async function compareGrpcEndpoints(endpoints: GrpcEndpoint[], testDurationSec: 
 
         if (stats.latencies.length > 0) {
           logger.info(`延迟统计 (相对于最快端点):`);
-          logger.info(`  平均延迟: ${avgLatency.toFixed(2)}ms`);
-          logger.info(`  最小延迟: ${minLatency.toFixed(2)}ms`);
-          logger.info(`  最大延迟: ${maxLatency.toFixed(2)}ms`);
+          logger.info(`  平均延迟: ${avgLatency.toFixed(2).padStart(6)}ms`);
+          logger.info(`  最小延迟: ${minLatency.toFixed(2).padStart(6)}ms`);
+          logger.info(`  最大延迟: ${maxLatency.toFixed(2).padStart(6)}ms`);
           // logger.info(`  标准差: ${stdDev.toFixed(2)}ms`);
           // logger.info(`  中位数 (p50): ${p50.toFixed(2)}ms`);
           // logger.info(`  百分位数 (p90): ${p90.toFixed(2)}ms`);
