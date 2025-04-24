@@ -56,7 +56,11 @@ async function testGRPCLatency(url: string, rounds: number = 10, token?: string)
     });
 
     stream.on("error", (error) => {
-      logger.error("Stream error:", error);
+      logger.error("Stream error:", error.message);
+      const err = error as any;
+      logger.error("Error code:", err.code);
+      logger.error("Error name:", err.name);
+      logger.error("Error stack:", err.stack);
       process.exit(1);
     });
 
