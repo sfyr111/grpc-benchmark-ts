@@ -14,16 +14,17 @@ function runComparisonTest(token1?: string, token2?: string, token3?: string) {
     // 从命令行参数获取token
     ...(token1 && { GRPC_TOKEN_1: token1 }),
 
-    // 端点 2: Fountainhead
-    GRPC_URL_2: "https://grpc-ny-enterprise.fountainhead.land",
-    // 此端点可能不需要token，但我们仍然允许从命令行传入
+    // 端点 3: 自定义 IP
+    GRPC_URL_2: "http://208.91.110.168:10000",
+    // 从命令行参数获取token
     ...(token2 && { GRPC_TOKEN_2: token2 }),
 
-    // 端点 3: 自定义 IP
-    GRPC_URL_3: "http://208.91.110.168:10000",
-    // 从命令行参数获取token
-    ...(token3 && { GRPC_TOKEN_3: token3 }),
+    // Fountainhead
+    GRPC_URL_3: "https://grpc-ny-enterprise.fountainhead.land",
 
+    GRPC_URL_4: "https://grpc-ams-enterprise.fountainhead.land",
+
+    GRPC_URL_5: "https://grpc-fra-enterprise.fountainhead.land",
     // 测试持续时间
     GRPC_COMPARISON_DURATION_SEC: "30",
   };
